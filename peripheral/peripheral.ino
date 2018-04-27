@@ -20,19 +20,20 @@
 #include <nRF5x_BLE_API.h>
 #include <Wire.h>
 #include "I2Cdev.h"
-#include "MPU6050.h"
+#include "MPU6050_6Axis_MotionApps20.h"
 
 #define DEVICE_NAME       "Nordic_HRM"
 
 BLE                       ble;
 Ticker                    ticker_task1;
-MPU6050 mpu;
+Ticker      ticker_get_acc;
+MPU6050 accelgyro;
 
 uint8_t hrmCounter = 100;
 
 uint8_t ax1, ax2, ay1, ay2, az1, az2, gx1, gx2, gy1, gy2, gz1, gz2;
-//static uint8_t bpm[12];
-static uint8_t bpm[2] = {0x00, 0x01};
+static uint8_t bpm[12];
+//static uint8_t bpm[2] = {0x00, 0x01};
 static const uint8_t location = 0x03;
 
 static const uint16_t uuid16_list[] = {GattService::UUID_HEART_RATE_SERVICE};
@@ -43,12 +44,11 @@ GattCharacteristic   hrmLocation(GattCharacteristic::UUID_BODY_SENSOR_LOCATION_C
 GattCharacteristic   *hrmChars[] = {&hrmRate, &hrmLocation, };
 GattService          hrmService(GattService::UUID_HEART_RATE_SERVICE, hrmChars, sizeof(hrmChars) / sizeof(GattCharacteristic *));
 
-MPU6050 accelgyro;
+
 
 int16_t ax, ay, az;
 int16_t gx, gy, gz;
 
-uint8_t mask = 0xFF;
 
 void disconnectionCallBack(const Gap::DisconnectionCallbackParams_t *params) {
   Serial.println("Disconnected!");
@@ -56,38 +56,47 @@ void disconnectionCallBack(const Gap::DisconnectionCallbackParams_t *params) {
   ble.startAdvertising();
 }
 
+void get_acc_values(){
+  //digitalWrite(13, HIGH);
+  //delay(3000);
+  accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+  //digitalWrite(13, LOW);
+  
+}
+
 void periodicCallback() {
   if (ble.getGapState().connected) {
-    accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+    //accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
     //ax2 
-//    bpm[1] = (uint8_t)(ax & 0xFF); //LSByte
+     bpm[1] = (uint8_t)(ax & 0xFF); //LSByte
+ //     bpm[0] = 0xAA;
 //    //ax1 
-//    bpm[0] = (uint8_t)(ax >> 8); //MSByte
+     bpm[0] = (uint8_t)(ax >> 8); //MSByte
 //
 //    //ay2 
-//    bpm[3] = (uint8_t)(ay & 0xFF); //LSByte
+    bpm[3] = (uint8_t)(ay & 0xFF); //LSByte
 //    //ay1
-//    bpm[2]= (uint8_t)(ay >> 8); //MSByte
+    bpm[2]= (uint8_t)(ay >> 8); //MSByte
 //
 //    //az2 
-//    bpm[5] = (uint8_t)(az & 0xFF); //LSByte
+    bpm[5] = (uint8_t)(az & 0xFF); //LSByte
 //    //az1 
-//    bpm[4] = (uint8_t)(az >> 8); //MSByte
+    bpm[4] = (uint8_t)(az >> 8); //MSByte
 //
 //    //gx2 
-//    bpm[7] = (uint8_t)(gx & 0xFF); //LSByte
+    bpm[7] = (uint8_t)(gx & 0xFF); //LSByte
 //    //gx1 
-//    bpm[6] = (uint8_t)(gx >> 8); //MSByte
+    bpm[6] = (uint8_t)(gx >> 8); //MSByte
 //
 //    //gy2 
-//    bpm[9] = (uint8_t)(gy & 0xFF); //LSByte
+    bpm[9] = (uint8_t)(gy & 0xFF); //LSByte
 //    //gy1 
-//    bpm[8] = (uint8_t)(gy >> 8); //MSByte
+    bpm[8] = (uint8_t)(gy >> 8); //MSByte
 //
 //    //gz2 
-//    bpm[11] = (uint8_t)(gz & 0xFF); //LSByte
+    bpm[11] = (uint8_t)(gz & 0xFF); //LSByte
 //    //gz1 
-//    bpm[10] = (uint8_t)(gz >> 8); //MSByte
+    bpm[10] = (uint8_t)(gz >> 8); //MSByte
 
     
     //bpm[1] = hrmCounter;
@@ -99,8 +108,17 @@ void setup() {
   // put your setup code here, to run once
   Serial.begin(9600);
   Serial.println("Nordic_HRM Demo ");
+   #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
+    Wire.begin();
+  #elif I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_FASTWIRE
+    Fastwire::setup(400, true);
+  #endif
+
+    Serial.println("Initializing I2C devices...");
+    accelgyro.initialize();
   // Init timer task
-  ticker_task1.attach(periodicCallback, 1);
+  //ticker_task1.attach(periodicCallback, 0.4);
+  //ticker_get_acc.attach(get_acc_values, 0.5);
   // Init ble
   ble.init();
   ble.onDisconnection(disconnectionCallBack);
@@ -124,22 +142,23 @@ void setup() {
   ble.setAdvertisingTimeout(0);
   // start advertising
   ble.startAdvertising();
-  #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
-    Wire.begin();
-  #elif I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_FASTWIRE
-    Fastwire::setup(400, true);
-  #endif
-
-    Serial.println("Initializing I2C devices...");
-    accelgyro.initialize();
+ 
 
     //verify connection
     Serial.println("Testing connection to I2C");
-    Serial.println(accelgyro.testConnection() ? "MPU6050 connection success" : " I2C connection failed...");
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
   ble.waitForEvent();
+//  digitalWrite(13, HIGH);
+//  //delay(3000);
+//  get_acc_values();
+//  delay(1000);
+//  digitalWrite(13, LOW);
+//  delay(1000);
+accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+periodicCallback();
+  
 }
 

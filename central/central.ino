@@ -19,7 +19,7 @@
  *        If connecting to "BLE_simplePeripheral, will discovery all services and characteristics
  */
 #include <nRF5x_BLE_API.h>
-
+int cc = 0;
 BLE           ble;
 
 //static uint8_t service1_uuid[]    = {0x71, 0x3D, 0, 0, 0x50, 0x3E, 0x4C, 0x75, 0xBA, 0x94, 0x31, 0x48, 0xF1, 0x8D, 0x94, 0x1E};
@@ -281,7 +281,7 @@ static void discoveredCharacteristicCallBack(const DiscoveredCharacteristic *cha
   if(chars->getUUID().shortOrLong() == UUID::UUID_TYPE_SHORT) {
     //Serial.println(chars->getUUID().getShortUUID(), HEX);
     if(chars->getUUID().getShortUUID() == 0x2A37) {
-      Serial.println("Found HRM characteristic ");
+     // Serial.println("Found HRM characteristic ");
       characteristic_is_fond = 1;
       chars_hrm = *chars;
     }
@@ -418,10 +418,14 @@ void onDataReadCallBack(const GattReadCallbackParams *params) {
  */
 void hvxCallBack(const GattHVXCallbackParams *params) {
   //Serial.println("GattClient notify call back ");
-  //Serial.print("The len : ");
-  //Serial.println(params->len, DEC);
+  Serial.print("The len : ");
+  Serial.println(params->len, DEC);
+  Serial.print("Count is: ");
+  Serial.println(cc, DEC);
+  cc = cc+1;
   for(unsigned char index=0; index<params->len; index++) {
     Serial.print(params->data[index], HEX);
+    Serial.print("||"); // to see how matlab outputs the bytes
   }
   Serial.println("");
 }
@@ -450,5 +454,6 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
   ble.waitForEvent();
+  Serial.println("In loop");
 }
 
