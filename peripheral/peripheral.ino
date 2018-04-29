@@ -27,14 +27,15 @@
 BLE                       ble;
 Ticker                    ticker_task1;
 Ticker      ticker_get_acc;
-MPU6050 accelgyro;
+MPU6050 accelgyro(0x68);
+bool dataReady = false;
 
 uint8_t hrmCounter = 100;
 
 uint8_t ax1, ax2, ay1, ay2, az1, az2, gx1, gx2, gy1, gy2, gz1, gz2;
-static uint8_t bpm[12];
+static uint8_t bpm[6];
 //static uint8_t bpm[2] = {0x00, 0x01};
-static const uint8_t location = 0x03;
+static const uint8_t location = 0x44;
 
 static const uint16_t uuid16_list[] = {GattService::UUID_HEART_RATE_SERVICE};
 
@@ -46,13 +47,15 @@ GattService          hrmService(GattService::UUID_HEART_RATE_SERVICE, hrmChars, 
 
 
 
-int16_t ax, ay, az;
+int16_t ax = 0;
+int16_t ay = 0; 
+int16_t az;
 int16_t gx, gy, gz;
 
 
 void disconnectionCallBack(const Gap::DisconnectionCallbackParams_t *params) {
-  Serial.println("Disconnected!");
-  Serial.println("Restarting the advertising process");
+  //Serial.println("Disconnected!");
+  //Serial.println("Restarting the advertising process");
   ble.startAdvertising();
 }
 
@@ -68,57 +71,71 @@ void periodicCallback() {
   if (ble.getGapState().connected) {
     //accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
     //ax2 
-     bpm[1] = (uint8_t)(ax & 0xFF); //LSByte
- //     bpm[0] = 0xAA;
-//    //ax1 
-     bpm[0] = (uint8_t)(ax >> 8); //MSByte
-//
-//    //ay2 
-    bpm[3] = (uint8_t)(ay & 0xFF); //LSByte
-//    //ay1
-    bpm[2]= (uint8_t)(ay >> 8); //MSByte
-//
-//    //az2 
-    bpm[5] = (uint8_t)(az & 0xFF); //LSByte
-//    //az1 
-    bpm[4] = (uint8_t)(az >> 8); //MSByte
-//
-//    //gx2 
-    bpm[7] = (uint8_t)(gx & 0xFF); //LSByte
-//    //gx1 
-    bpm[6] = (uint8_t)(gx >> 8); //MSByte
-//
-//    //gy2 
-    bpm[9] = (uint8_t)(gy & 0xFF); //LSByte
-//    //gy1 
-    bpm[8] = (uint8_t)(gy >> 8); //MSByte
-//
-//    //gz2 
-    bpm[11] = (uint8_t)(gz & 0xFF); //LSByte
-//    //gz1 
-    bpm[10] = (uint8_t)(gz >> 8); //MSByte
+//     bpm[1] = (uint8_t)(ax & 0xEE); //LSByte
+       bpm[1] = lowByte(ax);
+// //     bpm[0] = 0xAA;
+////    //ax1 
+//     bpm[0] = (uint8_t)(ax >> 8); //MSByte
+      bpm[0] = highByte(ax);
+      //bpm[0] = accelgyro.getDeviceID();
+////
+////    //ay2 
+//    bpm[3] = (uint8_t)(ay & 0xFF); //LSByte
+      bpm[3] = lowByte(ay);
+////    //ay1
+//    bpm[2]= (uint8_t)(ay >> 8); //MSByte
+      bpm[2] = highByte(ay);
+////
+////    //az2 
+//    bpm[5] = (uint8_t)(az & 0xFF); //LSByte
+      bpm[5] = lowByte(az); 
+////    //az1 
+//    bpm[4] = (uint8_t)(az >> 8); //MSByte
+      bpm[4] = highByte(az);
+////
+////    //gx2 
+//    bpm[7] = (uint8_t)(gx & 0xFF); //LSByte
+////    //gx1 
+//    bpm[6] = (uint8_t)(gx >> 8); //MSByte
+////
+////    //gy2 
+//    bpm[9] = (uint8_t)(gy & 0xFF); //LSByte
+////    //gy1 
+//    bpm[8] = (uint8_t)(gy >> 8); //MSByte
+////
+////    //gz2 
+//    bpm[11] = (uint8_t)(gz & 0xFF); //LSByte
+////    //gz1 
+//    bpm[10] = (uint8_t)(gz >> 8); //MSByte
 
-    
+    //bpm[0] = accelgyro.getDLPFMode();
+    //bpm[1] = 0x55;
     //bpm[1] = hrmCounter;
+    //bpm[0] =  accelgyro.getDLPFMode();
+        
     ble.updateCharacteristicValue(hrmRate.getValueAttribute().getHandle(), bpm, sizeof(bpm));
   }
 }
 
 void setup() {
   // put your setup code here, to run once
-  Serial.begin(9600);
-  Serial.println("Nordic_HRM Demo ");
+  //Serial.begin(9600);
+  //Serial.println("Nordic_HRM Demo ");
    #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
     Wire.begin();
   #elif I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_FASTWIRE
     Fastwire::setup(400, true);
   #endif
 
-    Serial.println("Initializing I2C devices...");
+   // Serial.println("Initializing I2C devices...");
     accelgyro.initialize();
+    if (accelgyro.testConnection()) {
+      digitalWrite(13,HIGH);
+    }
+    accelgyro.setDLPFMode(6);
+    accelgyro.setIntDataReadyEnabled(true);
   // Init timer task
   //ticker_task1.attach(periodicCallback, 0.4);
-  //ticker_get_acc.attach(get_acc_values, 0.5);
   // Init ble
   ble.init();
   ble.onDisconnection(disconnectionCallBack);
@@ -142,23 +159,34 @@ void setup() {
   ble.setAdvertisingTimeout(0);
   // start advertising
   ble.startAdvertising();
+
+  
  
 
     //verify connection
-    Serial.println("Testing connection to I2C");
+    //Serial.println("Testing connection to I2C");
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-  ble.waitForEvent();
+  
 //  digitalWrite(13, HIGH);
 //  //delay(3000);
 //  get_acc_values();
 //  delay(1000);
 //  digitalWrite(13, LOW);
 //  delay(1000);
-accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-periodicCallback();
+
+
+  if (accelgyro.getIntDataReadyStatus()){
+    accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+    periodicCallback();
+  }
+ //   digitalWrite(13,HIGH);
+  //}else{
+  //  digitalWrite(13, LOW);
+ // }
+  ble.waitForEvent();
   
 }
 

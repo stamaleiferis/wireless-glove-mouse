@@ -418,14 +418,22 @@ void onDataReadCallBack(const GattReadCallbackParams *params) {
  */
 void hvxCallBack(const GattHVXCallbackParams *params) {
   //Serial.println("GattClient notify call back ");
-  Serial.print("The len : ");
-  Serial.println(params->len, DEC);
-  Serial.print("Count is: ");
-  Serial.println(cc, DEC);
-  cc = cc+1;
-  for(unsigned char index=0; index<params->len; index++) {
-    Serial.print(params->data[index], HEX);
-    Serial.print("||"); // to see how matlab outputs the bytes
+ // Serial.print("The len : ");
+ // Serial.println(params->len, DEC);
+ // Serial.print("Count is: ");
+ // Serial.println(cc, DEC);
+ // cc = cc+1;
+ int16_t value = 0;
+ float fval = 0.0;
+  for(unsigned char index=0; index<params->len; index+=2) {
+    //Serial.print(params->data[index], HEX);
+    Serial.print("("); Serial.print(index); Serial.print(')');
+    //Serial.print(params->data[index+1], HEX);
+    value = params->data[index];
+    value = (value<<8) | (params->data[index+1]);
+    fval = value / 16384.0;  // might have to do it float?
+    Serial.print(fval);
+    //Serial.print("-"); // to see how matlab outputs the bytes
   }
   Serial.println("");
 }
@@ -454,6 +462,5 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
   ble.waitForEvent();
-  Serial.println("In loop");
 }
 
