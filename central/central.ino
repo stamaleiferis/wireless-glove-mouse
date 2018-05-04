@@ -431,8 +431,9 @@ void hvxCallBack(const GattHVXCallbackParams *params) {
     //Serial.print(params->data[index+1], HEX);
     value = params->data[index];
     value = (value<<8) | (params->data[index+1]);
-    fval = value / 16384.0;  // might have to do it float?
+    fval = (value / 16384.0) * 9.8;  // might have to do it float?
     Serial.print(fval); Serial.print("|");
+    
     //Serial.print("-"); // to see how matlab outputs the bytes
   }
   Serial.println("");
