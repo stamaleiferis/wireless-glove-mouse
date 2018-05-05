@@ -431,7 +431,8 @@ void hvxCallBack(const GattHVXCallbackParams *params) {
     //Serial.print(params->data[index+1], HEX);
     value = params->data[index];
     value = (value<<8) | (params->data[index+1]);
-    fval = (value / 16384.0) * 9.8;  // might have to do it float?
+    //fval = (value / 16384.0);// * 9.8;  // might have to do it float?
+    fval = value;
     Serial.print(fval); Serial.print("|");
     
     //Serial.print("-"); // to see how matlab outputs the bytes
@@ -441,8 +442,8 @@ void hvxCallBack(const GattHVXCallbackParams *params) {
 
 void setup() {
   // put your setup code here, to run once:
-  //Serial.begin(9600);
-  Serial.begin(1000000);
+  Serial.begin(115200);
+  //Serial.begin(1000000);
   //Serial.println("BLE Central Demo ");
 
   ble.init();

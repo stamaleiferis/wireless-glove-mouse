@@ -33,7 +33,7 @@ bool dataReady = false;
 uint8_t hrmCounter = 100;
 
 uint8_t ax1, ax2, ay1, ay2, az1, az2, gx1, gx2, gy1, gy2, gz1, gz2;
-static uint8_t bpm[6];
+static uint8_t bpm[10];
 //static uint8_t bpm[2] = {0x00, 0x01};
 static const uint8_t location = 0x44;
 
@@ -51,6 +51,7 @@ int16_t ax = 0;
 int16_t ay = 0; 
 int16_t az;
 int16_t gx, gy, gz;
+uint8_t LV, RV;
 
 
 void disconnectionCallBack(const Gap::DisconnectionCallbackParams_t *params) {
@@ -108,11 +109,25 @@ void periodicCallback() {
 ////    //gz1 
 //    bpm[10] = (uint8_t)(gz >> 8); //MSByte
 
-    //bpm[0] = accelgyro.getDLPFMode();
-    //bpm[1] = 0x55;
-    //bpm[1] = hrmCounter;
-    //bpm[0] =  accelgyro.getDLPFMode();
-        
+    LV = analogRead(A4);
+    RV = analogRead(A5);
+    
+    if (LV > 190){
+      bpm[6] = 1;
+    }else{
+      bpm[6] = 0;
+    }
+    RV = analogRead(A5);
+    bpm[7] = 0;//highByte(LV);
+
+    if (RV > 160){
+      bpm[8] = 1;
+    }else{
+      bpm[8] = 0;
+    }
+    bpm[9] = 0; //highByte(RV);
+    //bpm[9] = lowByte(RV);
+       
     ble.updateCharacteristicValue(hrmRate.getValueAttribute().getHandle(), bpm, sizeof(bpm));
   }
 }
@@ -134,6 +149,9 @@ void setup() {
     }
     accelgyro.setDLPFMode(6);
     accelgyro.setIntDataReadyEnabled(true);
+    //accelgyro.setXAccelOffset(accelgyro.getXAccelOffset()-3208); 
+    //accelgyro.setYAccelOffset(accelgyro.getYAccelOffset()+3860);
+    //accelgyro.setZGyroOffset(-85);
   // Init timer task
   //ticker_task1.attach(periodicCallback, 0.4);
   // Init ble
