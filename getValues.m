@@ -30,32 +30,32 @@ function [ax, ay, az] = getValues(obj, ~)
     r=vals(5);
     %clickleft = (vals(4)>155);
     %clickright = (vals(5)>200);
-    if (l && m1==0)
-        mouse.mousePress(java.awt.event.InputEvent.BUTTON1_DOWN_MASK);
+    if (~l && m1==0)
+        mouse.mousePress(java.awt.event.InputEvent.BUTTON3_DOWN_MASK);
         m1=1;
        
-    elseif(~l && m1==1)
-        mouse.mouseRelease(java.awt.event.InputEvent.BUTTON1_DOWN_MASK);
+    elseif(l && m1==1)
+        mouse.mouseRelease(java.awt.event.InputEvent.BUTTON3_DOWN_MASK);
         m1=0; 
     end
-    if (r && m2==0)
-        mouse.mousePress  (java.awt.event.InputEvent.BUTTON3_DOWN_MASK);
+    if (~r && m2==0)
+        mouse.mousePress  (java.awt.event.InputEvent.BUTTON1_DOWN_MASK);
         m2=1;
-    elseif(~r && m2==1)
-        mouse.mouseRelease(java.awt.event.InputEvent.BUTTON3_DOWN_MASK);
+    elseif(r && m2==1)
+        mouse.mouseRelease(java.awt.event.InputEvent.BUTTON1_DOWN_MASK);
         m2=0; 
     end   
     %ax_sum = ax_sum + ax;
     %fprintf('%d | ax: %0.5f \t ay: %0.5f \t az: %0.5f\n', n, ax,ay,az);
-    fprintf('Left is clicked %d, Left was clicked: %d || Right is clicked: %d, was clicked %d\n',l, m1, r, m2);
+    %fprintf('Left is clicked %d, Left was clicked: %d || Right is clicked: %d, was clicked %d\n',l, m1, r, m2);
     %stem(n,ax);
     %n = n+1;
     
     %% new method
     %X=-100*ay+X;
     %Y=100*ax+Y;
-    X=fx*ay+bx;
-    Y=fy*ax+by;
+    X=-fx*ay+bx;
+    Y=-fy*ax+by;
     mouse.mouseMove(X,Y);
 %% old method    
 %     %% if ax and ay vectors are full, calculate displacement
